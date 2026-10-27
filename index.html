@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Form Replicator 📋 紙本與照片表單 1:1 復刻神器 (去手寫開源版)</title>
+  <title>Form Replicator 📋 紙本與照片表單 1:1 復刻神器 (開源通用版)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -137,7 +137,6 @@
       text-align: left !important;
     }
 
-    /* 橡皮擦模式自訂滑鼠指標 */
     .eraser-active {
       cursor: crosshair !important;
     }
@@ -162,7 +161,7 @@
             Form Replicator
           </h1>
           <span class="px-2 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">
-            照片 1:1 復刻神器
+            照片與表單 1:1 復刻神器
           </span>
           <span class="px-2 py-0.5 text-[10px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-full flex items-center gap-1">
             <i data-lucide="eraser" class="w-3 h-3"></i> 支援智慧去手寫
@@ -171,7 +170,7 @@
             100% 離線純前端
           </span>
         </div>
-        <p class="text-xs text-slate-400 hidden sm:block">去除舊表單手寫字與印章・拖曳照片疊圖對齊・自訂任意欄位・直出 Word (.docx) 與雙面 A4 PDF</p>
+        <p class="text-xs text-slate-400 hidden sm:block">去除舊表單手寫字與印章・拖曳照片疊圖對齊・自由客製任意表單・直出 Word (.docx) 與雙面 A4 PDF</p>
       </div>
     </div>
 
@@ -212,7 +211,7 @@
           </label>
         </div>
         <p class="text-[11px] text-slate-400 leading-relaxed">
-          上傳舊表單照片，透光疊在畫布下比對。可即時「去除手寫字」、「消除印章」或使用「橡皮擦塗抹」還原空白母本！
+          上傳舊表單照片，透光疊在畫布下比對。可「去除手寫字」、「消除印章」或使用「橡皮擦塗抹」還原乾淨空白母本！
         </p>
 
         <!-- 檔案拖曳上傳 -->
@@ -248,7 +247,7 @@
         </div>
       </div>
 
-      <!-- 區塊 2: 🧹 智慧去手寫與印章工具箱 (Handwriting & Mark Cleaner) -->
+      <!-- 區塊 2: 🧹 去手寫痕跡與印章濾鏡 -->
       <div id="handwritingCleanerBox" class="space-y-3 glass-card p-4 rounded-xl border border-purple-500/30 bg-purple-950/20">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-purple-300 flex items-center space-x-1.5">
@@ -282,7 +281,7 @@
           <span>執行自動去手寫濾除</span>
         </button>
 
-        <!-- 互動橡皮擦畫筆 (手動塗抹抹除) -->
+        <!-- 互動橡皮擦畫筆 -->
         <div class="pt-2 border-t border-purple-500/20 space-y-2">
           <div class="flex items-center justify-between text-xs">
             <span class="text-slate-300 font-medium">🖱️ 畫布塗抹橡皮擦 (手動擦除)</span>
@@ -306,7 +305,7 @@
         </div>
       </div>
 
-      <!-- 區塊 3: 表單主體與基本設定 -->
+      <!-- 區塊 3: 表單標題與字型設定 -->
       <div class="space-y-4">
         <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
           <span>📝 表單標題與字型設定</span>
@@ -315,7 +314,7 @@
         <!-- 表單標題 -->
         <div class="space-y-1">
           <label class="text-[11px] text-slate-400">表單主標題</label>
-          <input type="text" id="inputTitle" value="公務加班簽到(退)紀錄單" class="w-full bg-slate-900/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition">
+          <input type="text" id="inputTitle" value="表單名稱" placeholder="請輸入表單名稱..." class="w-full bg-slate-900/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition">
         </div>
 
         <!-- 字型選擇與雙面設定 -->
@@ -338,44 +337,7 @@
         </div>
       </div>
 
-      <!-- 區塊 4: 次表頭資訊列 (可自訂 4 個欄位) -->
-      <div class="space-y-3 glass-card p-4 rounded-xl">
-        <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
-          <span>📑 次表頭資訊列 (可自由編輯)</span>
-        </label>
-        
-        <div class="grid grid-cols-2 gap-2">
-          <div class="space-y-1">
-            <label class="text-[10px] text-slate-400">欄位 1 標籤</label>
-            <input type="text" id="infoLabel1" value="單位" class="w-full bg-slate-900/90 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200">
-          </div>
-          <div class="space-y-1">
-            <label class="text-[10px] text-slate-400">欄位 1 內容</label>
-            <input type="text" id="infoVal1" value="學務處" class="w-full bg-slate-900/90 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
-          <div class="space-y-1">
-            <label class="text-[10px] text-slate-400">欄位 2 標籤</label>
-            <input type="text" id="infoLabel2" value="加班日期" class="w-full bg-slate-900/90 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200">
-          </div>
-          <div class="space-y-1">
-            <label class="text-[10px] text-slate-400">欄位 2 內容</label>
-            <input type="text" id="infoVal2" value="    年    月    日至    月    日" class="w-full bg-slate-900/90 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200">
-          </div>
-        </div>
-
-        <div class="space-y-1 pt-1">
-          <label class="text-[10px] text-slate-400">橫幅備註列 (如：事由/用途/主題)</label>
-          <div class="grid grid-cols-4 gap-1.5">
-            <input type="text" id="reasonLabel" value="加班事由" class="col-span-1 bg-slate-900/90 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200">
-            <input type="text" id="reasonVal" value="" placeholder="（空白留待書寫）" class="col-span-3 bg-slate-900/90 border border-slate-700 rounded px-2 py-1 text-xs text-slate-400">
-          </div>
-        </div>
-      </div>
-
-      <!-- 區塊 5: 表格欄位自訂 (動態增減與寬度分配) -->
+      <!-- 區塊 4: 表格欄位自訂 (動態增減與寬度分配) -->
       <div class="space-y-3 glass-card p-4 rounded-xl">
         <div class="flex items-center justify-between">
           <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center space-x-1">
@@ -393,27 +355,27 @@
         <div class="space-y-1.5 pt-2 border-t border-slate-700/60">
           <div class="flex items-center justify-between text-xs">
             <span class="text-slate-400">資料列數</span>
-            <span id="rowCountVal" class="text-emerald-400 font-mono font-bold">11 列</span>
+            <span id="rowCountVal" class="text-emerald-400 font-mono font-bold">12 列</span>
           </div>
-          <input type="range" id="inputRowCount" min="1" max="25" value="11" class="w-full accent-emerald-500 h-1.5 bg-slate-700 rounded-lg cursor-pointer">
+          <input type="range" id="inputRowCount" min="1" max="25" value="12" class="w-full accent-emerald-500 h-1.5 bg-slate-700 rounded-lg cursor-pointer">
         </div>
 
         <div class="space-y-1.5">
           <div class="flex items-center justify-between text-xs">
             <span class="text-slate-400">單列高度 (mm)</span>
-            <span id="rowHeightVal" class="text-emerald-400 font-mono font-bold">14.2 mm</span>
+            <span id="rowHeightVal" class="text-emerald-400 font-mono font-bold">14.0 mm</span>
           </div>
-          <input type="range" id="inputRowHeight" min="8" max="25" value="14.2" step="0.5" class="w-full accent-emerald-500 h-1.5 bg-slate-700 rounded-lg cursor-pointer">
+          <input type="range" id="inputRowHeight" min="8" max="25" value="14.0" step="0.5" class="w-full accent-emerald-500 h-1.5 bg-slate-700 rounded-lg cursor-pointer">
         </div>
       </div>
 
-      <!-- 區塊 6: 表尾核章欄 -->
+      <!-- 區塊 5: 表尾簽核欄 (可自由輸入或留空) -->
       <div class="space-y-2">
-        <label class="text-[11px] text-slate-400">表尾核章欄文字</label>
-        <input type="text" id="inputFooterText" value="單位主管：" class="w-full bg-slate-900/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition">
+        <label class="text-[11px] text-slate-400">表尾簽核欄文字 (留空則不顯示)</label>
+        <input type="text" id="inputFooterText" value="主管簽核：" placeholder="例如：審核／經手人／主管簽核..." class="w-full bg-slate-900/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition">
       </div>
 
-      <!-- 區塊 7: 規格 JSON 備份與載入 -->
+      <!-- 區塊 6: 規格 JSON 備份與載入 -->
       <div class="pt-2 border-t border-slate-700/60 space-y-2">
         <div class="grid grid-cols-2 gap-2">
           <button id="btnExportJson" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium flex items-center justify-center space-x-1.5 transition">
@@ -428,13 +390,13 @@
         </div>
       </div>
 
-      <!-- 區塊 8: 隱私安全宣告 -->
+      <!-- 區塊 7: 隱私安全宣告 -->
       <div class="p-3 bg-emerald-950/30 border border-emerald-500/20 rounded-xl text-[11px] text-emerald-300/80 leading-relaxed">
         <div class="font-semibold text-emerald-400 mb-0.5 flex items-center space-x-1">
           <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
           <span>100% 離線本地運算與隱私承諾</span>
         </div>
-        本工具完全於瀏覽器記憶體內執行，不經過任何外部伺服器，公務表單、簽到名冊及照片隱私安全零外洩。
+        本工具完全於瀏覽器記憶體內執行，不經過任何外部伺服器，表單內容與照片隱私安全零外洩。
       </div>
 
     </aside>
@@ -471,23 +433,19 @@
           
           <!-- 第 1 頁 (正面) -->
           <div class="a4-preview-page" id="page1">
-            <!-- 疊圖 Canvas 層 (可直接在上面執行手寫去除與橡皮擦塗抹) -->
             <div id="overlayContainer1" class="overlay-layer absolute inset-0 hidden z-10 flex items-center justify-center pointer-events-none">
               <canvas id="overlayCanvas1" class="w-full h-full object-contain opacity-45 mix-blend-multiply transition-transform pointer-events-auto"></canvas>
             </div>
 
-            <!-- 向量表單主體 -->
             <div id="formContainer1"></div>
           </div>
 
           <!-- 第 2 頁 (反面 - 雙面模式) -->
           <div class="a4-preview-page" id="page2">
-            <!-- 疊圖 Canvas 層 -->
             <div id="overlayContainer2" class="overlay-layer absolute inset-0 hidden z-10 flex items-center justify-center pointer-events-none">
               <canvas id="overlayCanvas2" class="w-full h-full object-contain opacity-45 mix-blend-multiply transition-transform pointer-events-auto"></canvas>
             </div>
 
-            <!-- 向量表單主體 -->
             <div id="formContainer2"></div>
           </div>
 
@@ -502,36 +460,28 @@
   <script>
     lucide.createIcons();
 
-    // 通用開源資料狀態模型
+    // 純粹、通用、無任何「加班」或特定處室的開放資料模型
     let formState = {
-      title: "公務加班簽到(退)紀錄單",
+      title: "表單名稱",
       fontFamily: "DFKai-SB, 標楷體, KaiTi, serif",
       isDuplex: true,
       
-      info1Label: "單位",
-      info1Val: "學務處",
-      info2Label: "加班日期",
-      info2Val: "    年    月    日至    月    日",
-      
-      reasonLabel: "加班事由",
-      reasonVal: "",
-      
+      // 通用表格欄位 (總寬度 182mm)
       columns: [
-        { name: "職別", widthMm: 28.5 },
-        { name: "簽到(簽名)", widthMm: 34.5 },
-        { name: "加班起始期間", widthMm: 33.5 },
-        { name: "加班結束期間", widthMm: 33.5 },
-        { name: "簽退(簽名)", widthMm: 34.5 },
-        { name: "備註", widthMm: 17.5 }
+        { name: "項次", widthMm: 20.0 },
+        { name: "項目名稱", widthMm: 45.0 },
+        { name: "規格與說明", widthMm: 55.0 },
+        { name: "數量／進度", widthMm: 32.0 },
+        { name: "備註", widthMm: 30.0 }
       ],
       
-      rowCount: 11,
-      rowHeightMm: 14.2,
-      footerText: "單位主管："
+      rowCount: 12,
+      rowHeightMm: 14.0,
+      footerText: "主管簽核："
     };
 
-    let originalImage = null; // 原始未處理影像
-    let currentProcessedImage = null; // 處理後影像
+    let originalImage = null;
+    let currentProcessedImage = null;
     let currentZoom = 1.0;
     let isEraserMode = false;
     let isDrawing = false;
@@ -586,40 +536,22 @@
       updatePreview();
     });
 
-    // 建立 HTML 表格字串
+    // 建立 HTML 表格字串 (純淨乾淨通用版)
     function buildFormHtml() {
       let totalWidthMm = formState.columns.reduce((sum, c) => sum + c.widthMm, 0);
       if (totalWidthMm <= 0) totalWidthMm = 182;
 
       let html = `
         <div class="rep-table-container" style="font-family: ${formState.fontFamily}; width: 182mm;">
-          <!-- Row 0: Title -->
-          <div class="rep-row" style="height: 12.8mm;">
-            <div class="rep-cell" style="width: 100%; font-size: 21pt; letter-spacing: 2px;">
-              ${formState.title}
+          <!-- 標題列 -->
+          <div class="rep-row" style="height: 14mm;">
+            <div class="rep-cell" style="width: 100%; font-size: 22pt; letter-spacing: 2px; font-weight: normal;">
+              ${formState.title || "表單名稱"}
             </div>
           </div>
           
-          <!-- Row 1: 單位 / 日期 次表頭 -->
-          <div class="rep-row" style="height: 12.8mm; font-size: 13.5pt;">
-            <div class="rep-cell" style="width: 16.0mm; letter-spacing: 2px;">${formState.info1Label}</div>
-            <div class="rep-cell" style="width: 44.0mm; letter-spacing: 3px;">${formState.info1Val}</div>
-            <div class="rep-cell" style="width: 27.0mm; letter-spacing: 1px;">${formState.info2Label}</div>
-            <div class="rep-cell" style="width: 95.0mm;">
-              <div style="width: 100%; display: flex; justify-content: space-around; align-items: center; padding: 0 4mm;">
-                ${formState.info2Val}
-              </div>
-            </div>
-          </div>
-          
-          <!-- Row 2: 事由列 -->
-          <div class="rep-row" style="height: 12.8mm; font-size: 13.5pt;">
-            <div class="rep-cell" style="width: 28.5mm; letter-spacing: 2px;">${formState.reasonLabel}</div>
-            <div class="rep-cell align-left" style="width: 153.5mm; padding-left: 3mm;">${formState.reasonVal}</div>
-          </div>
-          
-          <!-- Row 3: Grid Header -->
-          <div class="rep-row" style="height: 13.0mm; font-size: 12.5pt;">
+          <!-- 表格欄位標題列 -->
+          <div class="rep-row" style="height: 12.5mm; font-size: 13pt;">
       `;
 
       formState.columns.forEach(col => {
@@ -628,7 +560,7 @@
       });
       html += `</div>`;
 
-      // 資料列 (Rows 4 to N)
+      // 空白資料列 (Rows 1 to N)
       for (let r = 0; r < formState.rowCount; r++) {
         html += `<div class="rep-row" style="height: ${formState.rowHeightMm}mm;">`;
         formState.columns.forEach(col => {
@@ -638,16 +570,18 @@
         html += `</div>`;
       }
 
-      // Row Footer: 核章欄
-      html += `
-          <div class="rep-row" style="height: 12.8mm; font-size: 14pt;">
-            <div class="rep-cell align-left" style="width: 100%; padding-left: 3mm;">
+      // 表尾簽核欄 (若有填寫則顯示)
+      if (formState.footerText && formState.footerText.trim()) {
+        html += `
+          <div class="rep-row" style="height: 13.0mm; font-size: 14pt;">
+            <div class="rep-cell align-left" style="width: 100%; padding-left: 4mm;">
               ${formState.footerText}
             </div>
           </div>
-        </div>
-      `;
+        `;
+      }
 
+      html += `</div>`;
       return html;
     }
 
@@ -673,14 +607,6 @@
     document.getElementById("inputTitle").addEventListener("input", e => { formState.title = e.target.value; updatePreview(); });
     document.getElementById("selectFont").addEventListener("change", e => { formState.fontFamily = e.target.value; updatePreview(); });
     document.getElementById("selectDuplex").addEventListener("change", e => { formState.isDuplex = (e.target.value === "duplex"); updatePreview(); });
-    
-    document.getElementById("infoLabel1").addEventListener("input", e => { formState.info1Label = e.target.value; updatePreview(); });
-    document.getElementById("infoVal1").addEventListener("input", e => { formState.info1Val = e.target.value; updatePreview(); });
-    document.getElementById("infoLabel2").addEventListener("input", e => { formState.info2Label = e.target.value; updatePreview(); });
-    document.getElementById("infoVal2").addEventListener("input", e => { formState.info2Val = e.target.value; updatePreview(); });
-    
-    document.getElementById("reasonLabel").addEventListener("input", e => { formState.reasonLabel = e.target.value; updatePreview(); });
-    document.getElementById("reasonVal").addEventListener("input", e => { formState.reasonVal = e.target.value; updatePreview(); });
     
     document.getElementById("inputRowCount").addEventListener("input", e => {
       formState.rowCount = parseInt(e.target.value, 10);
@@ -730,9 +656,9 @@
         function buildDocxTable() {
           const rows = [];
 
-          // Row 0: Title
+          // 標題列
           rows.push(new TableRow({
-            height: { value: 725, rule: HeightRule.EXACT },
+            height: { value: 780, rule: HeightRule.EXACT },
             cantSplit: true,
             children: [
               new TableCell({
@@ -742,46 +668,24 @@
                   new Paragraph({
                     alignment: AlignmentType.CENTER,
                     spacing: { before: 0, after: 0, line: 240 },
-                    children: [new TextRun({ text: formState.title, font: "標楷體", size: 42 })]
+                    children: [new TextRun({ text: formState.title || "表單名稱", font: "標楷體", size: 44 })]
                   })
                 ]
               })
             ]
           }));
 
-          // Row 1: 次表頭資訊
+          // 表格欄位標題
           rows.push(new TableRow({
-            height: { value: 725, rule: HeightRule.EXACT },
-            cantSplit: true,
-            children: [
-              new TableCell({ width: { size: 907, type: WidthType.DXA }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formState.info1Label, font: "標楷體", size: 27 })] })] }),
-              new TableCell({ width: { size: 2494, type: WidthType.DXA }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formState.info1Val, font: "標楷體", size: 27 })] })] }),
-              new TableCell({ width: { size: 1531, type: WidthType.DXA }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formState.info2Label, font: "標楷體", size: 27 })] })] }),
-              new TableCell({ columnSpan: Math.max(1, formState.columns.length - 3), width: { size: 5386, type: WidthType.DXA }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formState.info2Val, font: "標楷體", size: 27 })] })] })
-            ]
-          }));
-
-          // Row 2: 事由列
-          rows.push(new TableRow({
-            height: { value: 725, rule: HeightRule.EXACT },
-            cantSplit: true,
-            children: [
-              new TableCell({ width: { size: 1615, type: WidthType.DXA }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formState.reasonLabel, font: "標楷體", size: 27 })] })] }),
-              new TableCell({ columnSpan: Math.max(1, formState.columns.length - 1), width: { size: 8703, type: WidthType.DXA }, children: [new Paragraph({ text: formState.reasonVal })] })
-            ]
-          }));
-
-          // Row 3: Grid Header
-          rows.push(new TableRow({
-            height: { value: 737, rule: HeightRule.EXACT },
+            height: { value: 720, rule: HeightRule.EXACT },
             cantSplit: true,
             children: formState.columns.map((col, i) => new TableCell({
               width: { size: colDxaList[i], type: WidthType.DXA },
-              children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: col.name, font: "標楷體", size: 25 })] })]
+              children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: col.name, font: "標楷體", size: 26 })] })]
             }))
           }));
 
-          // Rows 4 to N: 空白資料列 (原創乾淨模板，無手寫污染)
+          // 空白資料列
           for (let r = 0; r < formState.rowCount; r++) {
             rows.push(new TableRow({
               height: { value: Math.round(formState.rowHeightMm * 56.6929), rule: HeightRule.EXACT },
@@ -793,23 +697,25 @@
             }));
           }
 
-          // Row Footer: 核章欄
-          rows.push(new TableRow({
-            height: { value: 725, rule: HeightRule.EXACT },
-            cantSplit: true,
-            children: [
-              new TableCell({
-                columnSpan: formState.columns.length,
-                width: { size: 10318, type: WidthType.DXA },
-                children: [
-                  new Paragraph({
-                    indent: { left: 160 },
-                    children: [new TextRun({ text: formState.footerText, font: "標楷體", size: 28 })]
-                  })
-                ]
-              })
-            ]
-          }));
+          // 表尾核章欄
+          if (formState.footerText && formState.footerText.trim()) {
+            rows.push(new TableRow({
+              height: { value: 725, rule: HeightRule.EXACT },
+              cantSplit: true,
+              children: [
+                new TableCell({
+                  columnSpan: formState.columns.length,
+                  width: { size: 10318, type: WidthType.DXA },
+                  children: [
+                    new Paragraph({
+                      indent: { left: 160 },
+                      children: [new TextRun({ text: formState.footerText, font: "標楷體", size: 28 })]
+                    })
+                  ]
+                })
+              ]
+            }));
+          }
 
           return new Table({
             width: { size: 10318, type: WidthType.DXA },
@@ -839,7 +745,7 @@
         const blob = await Packer.toBlob(doc);
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = `${formState.title.replace(/[^\w\u4e00-\u9fa5]/g, "_")}_復刻乾淨版.docx`;
+        link.download = `${(formState.title || "表單").replace(/[^\w\u4e00-\u9fa5]/g, "_")}_復刻乾淨版.docx`;
         link.click();
       } catch (err) {
         alert("產生 Word 時發生錯誤：" + err.message);
@@ -873,18 +779,12 @@
           const imported = JSON.parse(event.target.result);
           formState = { ...formState, ...imported };
           
-          document.getElementById("inputTitle").value = formState.title;
-          document.getElementById("infoLabel1").value = formState.info1Label;
-          document.getElementById("infoVal1").value = formState.info1Val;
-          document.getElementById("infoLabel2").value = formState.info2Label;
-          document.getElementById("infoVal2").value = formState.info2Val;
-          document.getElementById("reasonLabel").value = formState.reasonLabel;
-          document.getElementById("reasonVal").value = formState.reasonVal;
-          document.getElementById("inputRowCount").value = formState.rowCount;
+          document.getElementById("inputTitle").value = formState.title || "";
+          document.getElementById("inputRowCount").value = formState.rowCount || 12;
           document.getElementById("rowCountVal").textContent = `${formState.rowCount} 列`;
-          document.getElementById("inputRowHeight").value = formState.rowHeightMm;
+          document.getElementById("inputRowHeight").value = formState.rowHeightMm || 14.0;
           document.getElementById("rowHeightVal").textContent = `${formState.rowHeightMm.toFixed(1)} mm`;
-          document.getElementById("inputFooterText").value = formState.footerText;
+          document.getElementById("inputFooterText").value = formState.footerText || "";
           document.getElementById("selectDuplex").value = formState.isDuplex ? "duplex" : "single";
 
           renderColumnControls();
@@ -897,9 +797,7 @@
       reader.readAsText(file);
     });
 
-    // ==========================================
-    // 📸 照片疊圖與去手寫痕跡 (Handwriting Cleaner) 核心實作
-    // ==========================================
+    // 📸 照片疊圖與去手寫痕跡核心實作
     const toggleOverlay = document.getElementById("toggleOverlay");
     const overlaySliders = document.getElementById("overlaySliders");
     const dropZone = document.getElementById("dropZone");
@@ -982,7 +880,7 @@
     document.getElementById("overlayY").addEventListener("input", updateOverlayTransform);
     document.getElementById("overlayRotate").addEventListener("input", updateOverlayTransform);
 
-    // 🎯 核心色彩空間濾除：藍筆、紅筆、鉛筆痕跡
+    // 色彩空間自動濾除：藍筆、紅筆、鉛筆痕跡
     document.getElementById("btnApplyCleanFilters").addEventListener("click", () => {
       if (!originalImage) {
         alert("請先上傳表單照片！");
@@ -1004,32 +902,23 @@
         const g = data[i + 1];
         const b = data[i + 2];
 
-        // 1. 藍色原子筆濾除
         if (removeBlue) {
           if (b > r * 1.15 && b > g * 1.05 && b > 45) {
-            data[i] = 255;
-            data[i + 1] = 255;
-            data[i + 2] = 255;
+            data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
             continue;
           }
         }
 
-        // 2. 紅色筆跡與紅色印章濾除
         if (removeRed) {
           if (r > g * 1.25 && r > b * 1.25 && r > 50) {
-            data[i] = 255;
-            data[i + 1] = 255;
-            data[i + 2] = 255;
+            data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
             continue;
           }
         }
 
-        // 3. 鉛筆灰階筆跡與擦痕消除
         if (suppressPencil) {
           if (r > 130 && r < 235 && Math.abs(r - g) < 18 && Math.abs(g - b) < 18) {
-            data[i] = 255;
-            data[i + 1] = 255;
-            data[i + 2] = 255;
+            data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
             continue;
           }
         }
@@ -1040,7 +929,7 @@
       alert("✨ 自動去手寫濾除完成！已抹除藍色、紅色原子筆與淺灰雜痕！");
     });
 
-    // 🖱️ 手動橡皮擦塗抹模式
+    // 手動橡皮擦塗抹模式
     const btnToggleEraser = document.getElementById("btnToggleEraser");
     const eraserOptions = document.getElementById("eraserOptions");
     const eraserStatusBadge = document.getElementById("eraserStatusBadge");
@@ -1097,7 +986,6 @@
 
     window.addEventListener("mouseup", () => { isDrawing = false; });
 
-    // 還原原圖
     document.getElementById("btnResetPhoto").addEventListener("click", () => {
       if (!originalImage) return;
       setupOverlayCanvas(originalImage);
