@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Form Replicator 📋 紙本與照片表單 1:1 復刻神器 (去手寫開源版)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- docx.js for pure client-side Word .docx generation -->
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans TC"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @media screen {
+      body {
+        background: radial-gradient(circle at 10% 20%, #0f172a 0%, #1e1b4b 50%, #090d16 100%);
+        min-height: 100vh;
+        color: #f1f5f9;
+      }
+      .glass-panel {
+        background: rgba(30, 41, 59, 0.75);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .glass-card {
+        background: rgba(15, 23, 42, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .a4-preview-page {
+        width: 210mm;
+        min-height: 297mm;
+        padding: 18mm 14mm 18mm 14mm;
+        background: #ffffff;
+        color: #000000;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        position: relative;
+        overflow: hidden;
+        margin: 0 auto 2rem auto;
+      }
+    }
+
+    @media print {
+      @page {
+        size: 210mm 297mm;
+        margin: 18mm 14mm 18mm 14mm;
+      }
+      html, body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .no-print, header, .sidebar-controls, .overlay-layer {
+        display: none !important;
+      }
+      .a4-preview-page {
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        page-break-after: always;
+        break-after: page;
+      }
+      .a4-preview-page:last-child {
+        page-break-after: avoid;
+        break-after: avoid;
+      }
+      .print-area {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+    }
+
+    .rep-table-container {
+      width: 182mm;
+      border: 1.2px solid #000;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      color: #000;
+      margin: 0 auto;
+    }
+    .rep-row {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      border-bottom: 1px solid #000;
+    }
+    .rep-row:last-child {
+      border-bottom: none;
+    }
+    .rep-cell {
+      border-right: 1px solid #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+      line-height: 1.25;
+    }
+    .rep-cell:last-child {
+      border-right: none;
+    }
+    .rep-cell.align-left {
+      justify-content: flex-start !important;
+      text-align: left !important;
+    }
+
+    /* 橡皮擦模式自訂滑鼠指標 */
+    .eraser-active {
+      cursor: crosshair !important;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.4); }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen text-slate-100">
+
+  <!-- 頂部導覽列 -->
+  <header class="no-print sticky top-0 z-50 glass-panel border-b border-slate-700/60 px-4 lg:px-8 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 bg-gradient-to-tr from-emerald-600 to-teal-400 rounded-xl shadow-lg shadow-emerald-500/20">
+        <i data-lucide="scan-line" class="w-5 h-5 text-slate-950 font-bold"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
+            Form Replicator
+          </h1>
+          <span class="px-2 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">
+            照片 1:1 復刻神器
+          </span>
+          <span class="px-2 py-0.5 text-[10px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-full flex items-center gap-1">
+            <i data-lucide="eraser" class="w-3 h-3"></i> 支援智慧去手寫
+          </span>
+          <span class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full">
+            100% 離線純前端
+          </span>
+        </div>
+        <p class="text-xs text-slate-400 hidden sm:block">去除舊表單手寫字與印章・拖曳照片疊圖對齊・自訂任意欄位・直出 Word (.docx) 與雙面 A4 PDF</p>
+      </div>
+    </div>
+
+    <!-- 頂部快速功能按鈕 -->
+    <div class="flex items-center space-x-2.5">
+      <button id="btnExportDocx" class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium shadow-md shadow-blue-500/20 transition active:scale-95">
+        <i data-lucide="file-text" class="w-4 h-4"></i>
+        <span>匯出 Word (.docx)</span>
+      </button>
+
+      <button id="btnPrintPdf" class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-emerald-500/20 transition active:scale-95">
+        <i data-lucide="printer" class="w-4 h-4"></i>
+        <span>列印 / 存為 PDF</span>
+      </button>
+
+      <a href="https://github.com/cconecone-cmyk/form-replicator" target="_blank" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition" title="GitHub 開源專案">
+        <i data-lucide="github" class="w-5 h-5"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- 主操作區 -->
+  <div class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+
+    <!-- 左側面板：控制與參數調校 -->
+    <aside class="sidebar-controls no-print w-full lg:w-[420px] glass-panel border-r border-slate-700/60 p-5 flex flex-col space-y-6 overflow-y-auto max-h-[calc(100vh-65px)]">
+
+      <!-- 區塊 1: 照片上傳與 1:1 疊圖透光比對 -->
+      <div class="space-y-3 glass-card p-4 rounded-xl border border-emerald-500/20">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-emerald-400 flex items-center space-x-1.5">
+            <i data-lucide="image-plus" class="w-4 h-4"></i>
+            <span>照片 1:1 疊圖透光比對</span>
+          </span>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="toggleOverlay" class="sr-only peer">
+            <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+          </label>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          上傳舊表單照片，透光疊在畫布下比對。可即時「去除手寫字」、「消除印章」或使用「橡皮擦塗抹」還原空白母本！
+        </p>
+
+        <!-- 檔案拖曳上傳 -->
+        <div id="dropZone" class="border border-dashed border-slate-600 hover:border-emerald-500/60 rounded-xl p-3.5 text-center cursor-pointer bg-slate-900/40 transition">
+          <input type="file" id="photoUpload" accept="image/*" class="hidden">
+          <i data-lucide="upload-cloud" class="w-6 h-6 mx-auto text-slate-400 mb-1"></i>
+          <p class="text-xs text-slate-300 font-medium">點擊或拖曳表單照片至此</p>
+          <p class="text-[10px] text-slate-500">支援拍照、翻拍圖與掃描檔</p>
+        </div>
+
+        <!-- 疊圖調節控制 -->
+        <div id="overlaySliders" class="space-y-2.5 hidden pt-2 border-t border-slate-700/60">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span>疊圖透光度</span>
+            <span id="opacityVal" class="text-emerald-400 font-mono font-bold">45%</span>
+          </div>
+          <input type="range" id="overlayOpacity" min="0" max="100" value="45" class="w-full accent-emerald-500 h-1.5 bg-slate-700 rounded-lg cursor-pointer">
+          
+          <div class="grid grid-cols-3 gap-2 pt-1 text-xs">
+            <div>
+              <span class="text-[10px] text-slate-400">水平 (X)</span>
+              <input type="range" id="overlayX" min="-80" max="80" value="0" class="w-full accent-emerald-500 h-1 bg-slate-700 rounded-lg cursor-pointer">
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-400">垂直 (Y)</span>
+              <input type="range" id="overlayY" min="-80" max="80" value="0" class="w-full accent-emerald-500 h-1 bg-slate-700 rounded-lg cursor-pointer">
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-400">旋轉校正</span>
+              <input type="range" id="overlayRotate" min="-15" max="15" value="0" step="0.2" class="w-full accent-emerald-500 h-1 bg-slate-700 rounded-lg cursor-pointer">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 區塊 2: 🧹 智慧去手寫與印章工具箱 (Handwriting & Mark Cleaner) -->
+      <div id="handwritingCleanerBox" class="space-y-3 glass-card p-4 rounded-xl border border-purple-500/30 bg-purple-950/20">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-purple-300 flex items-center space-x-1.5">
+            <i data-lucide="eraser" class="w-4 h-4 text-purple-400"></i>
+            <span>去手寫痕跡與印章濾鏡</span>
+          </span>
+          <span class="text-[10px] text-purple-400/80 font-mono">Clean Mode</span>
+        </div>
+        <p class="text-[11px] text-slate-300/80 leading-relaxed">
+          針對已填寫簽名的舊表單，一鍵抹除有色筆跡與雜痕，快速復原成純淨空白表格。
+        </p>
+
+        <!-- 一鍵色彩筆跡濾除 -->
+        <div class="space-y-2 pt-1 text-xs">
+          <label class="flex items-center space-x-2 text-slate-300 cursor-pointer hover:text-white">
+            <input type="checkbox" id="chkFilterBlue" checked class="w-3.5 h-3.5 accent-purple-500 rounded cursor-pointer">
+            <span>🔵 去除藍色原子筆手寫筆跡</span>
+          </label>
+          <label class="flex items-center space-x-2 text-slate-300 cursor-pointer hover:text-white">
+            <input type="checkbox" id="chkFilterRed" checked class="w-3.5 h-3.5 accent-purple-500 rounded cursor-pointer">
+            <span>🔴 去除紅色原子筆跡與印章</span>
+          </label>
+          <label class="flex items-center space-x-2 text-slate-300 cursor-pointer hover:text-white">
+            <input type="checkbox" id="chkFilterPencil" checked class="w-3.5 h-3.5 accent-purple-500 rounded cursor-pointer">
+            <span>✏️ 消除淺灰鉛筆與擦痕髒污</span>
+          </label>
+        </div>
+
+        <button id="btnApplyCleanFilters" class="w-full mt-2 py-1.5 px-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-purple-600/30 flex items-center justify-center space-x-1.5 transition active:scale-95">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          <span>執行自動去手寫濾除</span>
+        </button>
+
+        <!-- 互動橡皮擦畫筆 (手動塗抹抹除) -->
+        <div class="pt-2 border-t border-purple-500/20 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-300 font-medium">🖱️ 畫布塗抹橡皮擦 (手動擦除)</span>
+            <button id="btnToggleEraser" class="px-2 py-0.5 rounded text-[11px] bg-slate-800 hover:bg-purple-600 text-slate-300 transition">
+              啟用擦除筆
+            </button>
+          </div>
+          <div id="eraserOptions" class="hidden space-y-1.5 text-xs text-slate-400">
+            <div class="flex items-center justify-between">
+              <span>筆刷直徑</span>
+              <span id="brushSizeVal" class="text-purple-300 font-mono">25px</span>
+            </div>
+            <input type="range" id="brushSize" min="5" max="80" value="25" class="w-full accent-purple-500 h-1 bg-slate-700 rounded-lg cursor-pointer">
+            <p class="text-[10px] text-slate-400">💡 提示：在右側畫布上按住滑鼠拖曳，即可抹去手寫簽名或雜痕！</p>
+          </div>
+
+          <button id="btnResetPhoto" class="text-[11px] text-slate-400 hover:text-rose-300 flex items-center space-x-1 transition pt-1">
+            <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+            <span>還原上傳照片原貌</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 區塊 3: 表單主體與基本設定 -->
+      <div class="space-y-4">
+        <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+          <span>📝 表單標題與字型設定</span>
+        </label>
+
+        <!-- 表單標題 -->
+        <div class="space-y-1">
+          <label class="text-[11px] text-slate-400">表單主標題</label>
+          <input type="text" id="inputTitle" value="公務加班簽到(退)紀錄單" class="w-full bg-slate-900/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition">
+        </div>
+
+        <!-- 字型選擇與雙面設定 -->
+        <div class="grid grid-cols-2 gap-2">
+          <div class="space-y-1">
+            <label class="text-[11px] text-slate-400">字型樣式</label>
+            <select id="selectFont" class="w-full bg-slate-900/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition">
+              <option value="DFKai-SB, 標楷體, KaiTi, serif">標楷體 (公文標準)</option>
+              <option value="PMingLiU, 新細明體, serif">新細明體 (正式文件)</option>
+              <option value="'Microsoft JhengHei', 微軟正黑體, sans-serif">微軟正黑體 (現代簡潔)</option>
+            </select>
+          </div>
+          <div class="space-y-1">
+            <label class="text-[11px] text-slate-400">列印規格</label>
+            <select id="selectDuplex" class="w-full bg-slate-900/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition">
+              <option value="duplex">A4 雙面 (正反對稱 2 頁)</option>
+              <option value="single">A4 單面 (精確 1 頁)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 區塊 4: 次表頭資訊列 (可自訂 4 個欄位) -->
+      <div class="space-y-3 glass-card p-4 rounded-xl">
+        <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+          <span>📑 次表頭資訊列 (可自由編輯)</span>
+        </label>
+        
+        <div class="grid grid-cols-2 gap-2">
+          <div class="space-y-1">
+            <label class="text-[10px] text-slate-400">欄位 1 標籤</label>
+            <input type="text" id="infoLabel1" value="單位" class="w-full bg-slate-900/90 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[10px] text-slate-400">欄位 1 內容</label>
+            <input type="text" id="infoVal1" value="學務處" class="w-full bg-slate-900/90 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div class="space-y-1">
+            <label class="text-[10px] text-slate-400">欄位 2 標籤</label>
+            <input type="text" id="infoLabel2" value="加班日期" class="w-full bg-slate-900/90 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[10px] text-slate-400">欄位 2 內容</label>
+            <input type="text" id="infoVal2" value="    年    月    日至    月    日" class="w-full bg-slate-900/90 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200">
+          </div>
+        </div>
+
+        <div class="space-y-1 pt-1">
+          <label class="text-[10px] text-slate-400">橫幅備註列 (如：事由/用途/主題)</label>
+          <div class="grid grid-cols-4 gap-1.5">
+            <input type="text" id="reasonLabel" value="加班事由" class="col-span-1 bg-slate-900/90 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200">
+            <input type="text" id="reasonVal" value="" placeholder="（空白留待書寫）" class="col-span-3 bg-slate-900/90 border border-slate-700 rounded px-2 py-1 text-xs text-slate-400">
+          </div>
+        </div>
+      </div>
+
+      <!-- 區塊 5: 表格欄位自訂 (動態增減與寬度分配) -->
+      <div class="space-y-3 glass-card p-4 rounded-xl">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center space-x-1">
+            <i data-lucide="columns" class="w-3.5 h-3.5"></i>
+            <span>表格欄位自訂 (動態增減)</span>
+          </label>
+          <button id="btnAddColumn" class="px-2 py-0.5 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded text-[11px] font-medium flex items-center space-x-1 transition">
+            <i data-lucide="plus" class="w-3 h-3"></i>
+            <span>新增欄</span>
+          </button>
+        </div>
+
+        <div id="columnListContainer" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+
+        <div class="space-y-1.5 pt-2 border-t border-slate-700/60">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-400">資料列數</span>
+            <span id="rowCountVal" class="text-emerald-400 font-mono font-bold">11 列</span>
+          </div>
+          <input type="range" id="inputRowCount" min="1" max="25" value="11" class="w-full accent-emerald-500 h-1.5 bg-slate-700 rounded-lg cursor-pointer">
+        </div>
+
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-400">單列高度 (mm)</span>
+            <span id="rowHeightVal" class="text-emerald-400 font-mono font-bold">14.2 mm</span>
+          </div>
+          <input type="range" id="inputRowHeight" min="8" max="25" value="14.2" step="0.5" class="w-full accent-emerald-500 h-1.5 bg-slate-700 rounded-lg cursor-pointer">
+        </div>
+      </div>
+
+      <!-- 區塊 6: 表尾核章欄 -->
+      <div class="space-y-2">
+        <label class="text-[11px] text-slate-400">表尾核章欄文字</label>
+        <input type="text" id="inputFooterText" value="單位主管：" class="w-full bg-slate-900/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition">
+      </div>
+
+      <!-- 區塊 7: 規格 JSON 備份與載入 -->
+      <div class="pt-2 border-t border-slate-700/60 space-y-2">
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btnExportJson" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium flex items-center justify-center space-x-1.5 transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>匯出 JSON 規格</span>
+          </button>
+          <button id="btnImportJsonTrigger" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium flex items-center justify-center space-x-1.5 transition">
+            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+            <span>載入 JSON 規格</span>
+          </button>
+          <input type="file" id="jsonFileInput" accept=".json" class="hidden">
+        </div>
+      </div>
+
+      <!-- 區塊 8: 隱私安全宣告 -->
+      <div class="p-3 bg-emerald-950/30 border border-emerald-500/20 rounded-xl text-[11px] text-emerald-300/80 leading-relaxed">
+        <div class="font-semibold text-emerald-400 mb-0.5 flex items-center space-x-1">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+          <span>100% 離線本地運算與隱私承諾</span>
+        </div>
+        本工具完全於瀏覽器記憶體內執行，不經過任何外部伺服器，公務表單、簽到名冊及照片隱私安全零外洩。
+      </div>
+
+    </aside>
+
+    <!-- 右側畫布：即時 A4 預覽區 -->
+    <main class="flex-1 bg-slate-950/80 p-4 lg:p-8 overflow-y-auto flex flex-col items-center">
+      
+      <!-- 畫布切換控制列 -->
+      <div class="no-print w-full max-w-[210mm] flex items-center justify-between mb-4 text-xs">
+        <div class="flex items-center space-x-2 text-slate-400">
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>即時 A4 向量預覽 (210mm × 297mm)</span>
+          <span id="pageCountBadge" class="px-2 py-0.5 bg-slate-800 text-slate-300 rounded text-[10px]">A4 雙面 (共 2 頁)</span>
+          <span id="eraserStatusBadge" class="hidden px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-[10px]">
+            橡皮擦塗抹中
+          </span>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <button id="btnZoomOut" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition" title="縮小">
+            <i data-lucide="zoom-out" class="w-4 h-4"></i>
+          </button>
+          <span id="zoomLevelText" class="text-xs font-mono text-slate-400">100%</span>
+          <button id="btnZoomIn" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition" title="放大">
+            <i data-lucide="zoom-in" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- A4 畫布預覽容器 -->
+      <div id="zoomWrapper" class="transition-transform duration-200 origin-top">
+        
+        <div id="printArea" class="print-area">
+          
+          <!-- 第 1 頁 (正面) -->
+          <div class="a4-preview-page" id="page1">
+            <!-- 疊圖 Canvas 層 (可直接在上面執行手寫去除與橡皮擦塗抹) -->
+            <div id="overlayContainer1" class="overlay-layer absolute inset-0 hidden z-10 flex items-center justify-center pointer-events-none">
+              <canvas id="overlayCanvas1" class="w-full h-full object-contain opacity-45 mix-blend-multiply transition-transform pointer-events-auto"></canvas>
+            </div>
+
+            <!-- 向量表單主體 -->
+            <div id="formContainer1"></div>
+          </div>
+
+          <!-- 第 2 頁 (反面 - 雙面模式) -->
+          <div class="a4-preview-page" id="page2">
+            <!-- 疊圖 Canvas 層 -->
+            <div id="overlayContainer2" class="overlay-layer absolute inset-0 hidden z-10 flex items-center justify-center pointer-events-none">
+              <canvas id="overlayCanvas2" class="w-full h-full object-contain opacity-45 mix-blend-multiply transition-transform pointer-events-auto"></canvas>
+            </div>
+
+            <!-- 向量表單主體 -->
+            <div id="formContainer2"></div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- JavaScript 核心程式碼 -->
+  <script>
+    lucide.createIcons();
+
+    // 通用開源資料狀態模型
+    let formState = {
+      title: "公務加班簽到(退)紀錄單",
+      fontFamily: "DFKai-SB, 標楷體, KaiTi, serif",
+      isDuplex: true,
+      
+      info1Label: "單位",
+      info1Val: "學務處",
+      info2Label: "加班日期",
+      info2Val: "    年    月    日至    月    日",
+      
+      reasonLabel: "加班事由",
+      reasonVal: "",
+      
+      columns: [
+        { name: "職別", widthMm: 28.5 },
+        { name: "簽到(簽名)", widthMm: 34.5 },
+        { name: "加班起始期間", widthMm: 33.5 },
+        { name: "加班結束期間", widthMm: 33.5 },
+        { name: "簽退(簽名)", widthMm: 34.5 },
+        { name: "備註", widthMm: 17.5 }
+      ],
+      
+      rowCount: 11,
+      rowHeightMm: 14.2,
+      footerText: "單位主管："
+    };
+
+    let originalImage = null; // 原始未處理影像
+    let currentProcessedImage = null; // 處理後影像
+    let currentZoom = 1.0;
+    let isEraserMode = false;
+    let isDrawing = false;
+    let brushRadius = 25;
+
+    // 渲染左側欄位列表控制
+    function renderColumnControls() {
+      const container = document.getElementById("columnListContainer");
+      container.innerHTML = "";
+
+      formState.columns.forEach((col, idx) => {
+        const item = document.createElement("div");
+        item.className = "flex items-center space-x-1.5 bg-slate-900/60 p-1.5 rounded-lg border border-slate-700/60 text-xs";
+        item.innerHTML = `
+          <input type="text" value="${col.name}" class="col-name-input flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-0.5 text-xs text-slate-200" placeholder="欄位名稱">
+          <div class="flex items-center space-x-1 text-slate-400">
+            <input type="number" step="0.5" min="5" max="100" value="${col.widthMm}" class="col-width-input w-14 bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 text-xs text-emerald-400 font-mono text-center">
+            <span class="text-[10px]">mm</span>
+          </div>
+          <button class="col-delete-btn p-1 text-rose-400 hover:text-rose-300 rounded hover:bg-slate-800 transition" title="刪除此欄">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        `;
+
+        item.querySelector(".col-name-input").addEventListener("input", e => {
+          col.name = e.target.value;
+          updatePreview();
+        });
+        item.querySelector(".col-width-input").addEventListener("input", e => {
+          col.widthMm = parseFloat(e.target.value) || 10;
+          updatePreview();
+        });
+        item.querySelector(".col-delete-btn").addEventListener("click", () => {
+          if (formState.columns.length <= 1) {
+            alert("至少需保留 1 個欄位！");
+            return;
+          }
+          formState.columns.splice(idx, 1);
+          renderColumnControls();
+          updatePreview();
+        });
+
+        container.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    // 新增欄位
+    document.getElementById("btnAddColumn").addEventListener("click", () => {
+      formState.columns.push({ name: `欄位 ${formState.columns.length + 1}`, widthMm: 25.0 });
+      renderColumnControls();
+      updatePreview();
+    });
+
+    // 建立 HTML 表格字串
+    function buildFormHtml() {
+      let totalWidthMm = formState.columns.reduce((sum, c) => sum + c.widthMm, 0);
+      if (totalWidthMm <= 0) totalWidthMm = 182;
+
+      let html = `
+        <div class="rep-table-container" style="font-family: ${formState.fontFamily}; width: 182mm;">
+          <!-- Row 0: Title -->
+          <div class="rep-row" style="height: 12.8mm;">
+            <div class="rep-cell" style="width: 100%; font-size: 21pt; letter-spacing: 2px;">
+              ${formState.title}
+            </div>
+          </div>
+          
+          <!-- Row 1: 單位 / 日期 次表頭 -->
+          <div class="rep-row" style="height: 12.8mm; font-size: 13.5pt;">
+            <div class="rep-cell" style="width: 16.0mm; letter-spacing: 2px;">${formState.info1Label}</div>
+            <div class="rep-cell" style="width: 44.0mm; letter-spacing: 3px;">${formState.info1Val}</div>
+            <div class="rep-cell" style="width: 27.0mm; letter-spacing: 1px;">${formState.info2Label}</div>
+            <div class="rep-cell" style="width: 95.0mm;">
+              <div style="width: 100%; display: flex; justify-content: space-around; align-items: center; padding: 0 4mm;">
+                ${formState.info2Val}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Row 2: 事由列 -->
+          <div class="rep-row" style="height: 12.8mm; font-size: 13.5pt;">
+            <div class="rep-cell" style="width: 28.5mm; letter-spacing: 2px;">${formState.reasonLabel}</div>
+            <div class="rep-cell align-left" style="width: 153.5mm; padding-left: 3mm;">${formState.reasonVal}</div>
+          </div>
+          
+          <!-- Row 3: Grid Header -->
+          <div class="rep-row" style="height: 13.0mm; font-size: 12.5pt;">
+      `;
+
+      formState.columns.forEach(col => {
+        const scaledWidth = (col.widthMm / totalWidthMm) * 182;
+        html += `<div class="rep-cell" style="width: ${scaledWidth.toFixed(2)}mm;">${col.name}</div>`;
+      });
+      html += `</div>`;
+
+      // 資料列 (Rows 4 to N)
+      for (let r = 0; r < formState.rowCount; r++) {
+        html += `<div class="rep-row" style="height: ${formState.rowHeightMm}mm;">`;
+        formState.columns.forEach(col => {
+          const scaledWidth = (col.widthMm / totalWidthMm) * 182;
+          html += `<div class="rep-cell" style="width: ${scaledWidth.toFixed(2)}mm;"></div>`;
+        });
+        html += `</div>`;
+      }
+
+      // Row Footer: 核章欄
+      html += `
+          <div class="rep-row" style="height: 12.8mm; font-size: 14pt;">
+            <div class="rep-cell align-left" style="width: 100%; padding-left: 3mm;">
+              ${formState.footerText}
+            </div>
+          </div>
+        </div>
+      `;
+
+      return html;
+    }
+
+    // 刷新 A4 雙面畫布預覽
+    function updatePreview() {
+      const html = buildFormHtml();
+      document.getElementById("formContainer1").innerHTML = html;
+      
+      const page2 = document.getElementById("page2");
+      const pageCountBadge = document.getElementById("pageCountBadge");
+      
+      if (formState.isDuplex) {
+        page2.classList.remove("hidden");
+        document.getElementById("formContainer2").innerHTML = html;
+        pageCountBadge.textContent = "A4 雙面 (共 2 頁)";
+      } else {
+        page2.classList.add("hidden");
+        pageCountBadge.textContent = "A4 單面 (共 1 頁)";
+      }
+    }
+
+    // 事件監聽綁定
+    document.getElementById("inputTitle").addEventListener("input", e => { formState.title = e.target.value; updatePreview(); });
+    document.getElementById("selectFont").addEventListener("change", e => { formState.fontFamily = e.target.value; updatePreview(); });
+    document.getElementById("selectDuplex").addEventListener("change", e => { formState.isDuplex = (e.target.value === "duplex"); updatePreview(); });
+    
+    document.getElementById("infoLabel1").addEventListener("input", e => { formState.info1Label = e.target.value; updatePreview(); });
+    document.getElementById("infoVal1").addEventListener("input", e => { formState.info1Val = e.target.value; updatePreview(); });
+    document.getElementById("infoLabel2").addEventListener("input", e => { formState.info2Label = e.target.value; updatePreview(); });
+    document.getElementById("infoVal2").addEventListener("input", e => { formState.info2Val = e.target.value; updatePreview(); });
+    
+    document.getElementById("reasonLabel").addEventListener("input", e => { formState.reasonLabel = e.target.value; updatePreview(); });
+    document.getElementById("reasonVal").addEventListener("input", e => { formState.reasonVal = e.target.value; updatePreview(); });
+    
+    document.getElementById("inputRowCount").addEventListener("input", e => {
+      formState.rowCount = parseInt(e.target.value, 10);
+      document.getElementById("rowCountVal").textContent = `${formState.rowCount} 列`;
+      updatePreview();
+    });
+    document.getElementById("inputRowHeight").addEventListener("input", e => {
+      formState.rowHeightMm = parseFloat(e.target.value);
+      document.getElementById("rowHeightVal").textContent = `${formState.rowHeightMm.toFixed(1)} mm`;
+      updatePreview();
+    });
+    
+    document.getElementById("inputFooterText").addEventListener("input", e => { formState.footerText = e.target.value; updatePreview(); });
+
+    // 縮放控制
+    document.getElementById("btnZoomIn").addEventListener("click", () => { if (currentZoom < 1.6) currentZoom += 0.1; applyZoom(); });
+    document.getElementById("btnZoomOut").addEventListener("click", () => { if (currentZoom > 0.5) currentZoom -= 0.1; applyZoom(); });
+    function applyZoom() {
+      document.getElementById("zoomWrapper").style.transform = `scale(${currentZoom})`;
+      document.getElementById("zoomLevelText").textContent = `${Math.round(currentZoom * 100)}%`;
+    }
+
+    // 列印 / 存為向量 PDF
+    document.getElementById("btnPrintPdf").addEventListener("click", () => {
+      window.print();
+    });
+
+    // 純前端一鍵匯出 Word (.docx)
+    document.getElementById("btnExportDocx").addEventListener("click", async () => {
+      const btn = document.getElementById("btnExportDocx");
+      const origHtml = btn.innerHTML;
+      btn.innerHTML = `<span class="animate-spin mr-1">⏳</span> 正在生成 Word...`;
+      btn.disabled = true;
+
+      try {
+        const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, AlignmentType, HeightRule, TextRun, BorderStyle } = docx;
+
+        const borderStyle = { style: BorderStyle.SINGLE, size: 6, color: "000000" };
+        const tableBorders = {
+          top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle,
+          insideHorizontal: borderStyle, insideVertical: borderStyle
+        };
+
+        const totalWidthMm = formState.columns.reduce((sum, c) => sum + c.widthMm, 0) || 182;
+        const colDxaList = formState.columns.map(c => Math.round((c.widthMm / totalWidthMm) * 10318));
+
+        function buildDocxTable() {
+          const rows = [];
+
+          // Row 0: Title
+          rows.push(new TableRow({
+            height: { value: 725, rule: HeightRule.EXACT },
+            cantSplit: true,
+            children: [
+              new TableCell({
+                columnSpan: formState.columns.length,
+                width: { size: 10318, type: WidthType.DXA },
+                children: [
+                  new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    spacing: { before: 0, after: 0, line: 240 },
+                    children: [new TextRun({ text: formState.title, font: "標楷體", size: 42 })]
+                  })
+                ]
+              })
+            ]
+          }));
+
+          // Row 1: 次表頭資訊
+          rows.push(new TableRow({
+            height: { value: 725, rule: HeightRule.EXACT },
+            cantSplit: true,
+            children: [
+              new TableCell({ width: { size: 907, type: WidthType.DXA }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formState.info1Label, font: "標楷體", size: 27 })] })] }),
+              new TableCell({ width: { size: 2494, type: WidthType.DXA }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formState.info1Val, font: "標楷體", size: 27 })] })] }),
+              new TableCell({ width: { size: 1531, type: WidthType.DXA }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formState.info2Label, font: "標楷體", size: 27 })] })] }),
+              new TableCell({ columnSpan: Math.max(1, formState.columns.length - 3), width: { size: 5386, type: WidthType.DXA }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formState.info2Val, font: "標楷體", size: 27 })] })] })
+            ]
+          }));
+
+          // Row 2: 事由列
+          rows.push(new TableRow({
+            height: { value: 725, rule: HeightRule.EXACT },
+            cantSplit: true,
+            children: [
+              new TableCell({ width: { size: 1615, type: WidthType.DXA }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formState.reasonLabel, font: "標楷體", size: 27 })] })] }),
+              new TableCell({ columnSpan: Math.max(1, formState.columns.length - 1), width: { size: 8703, type: WidthType.DXA }, children: [new Paragraph({ text: formState.reasonVal })] })
+            ]
+          }));
+
+          // Row 3: Grid Header
+          rows.push(new TableRow({
+            height: { value: 737, rule: HeightRule.EXACT },
+            cantSplit: true,
+            children: formState.columns.map((col, i) => new TableCell({
+              width: { size: colDxaList[i], type: WidthType.DXA },
+              children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: col.name, font: "標楷體", size: 25 })] })]
+            }))
+          }));
+
+          // Rows 4 to N: 空白資料列 (原創乾淨模板，無手寫污染)
+          for (let r = 0; r < formState.rowCount; r++) {
+            rows.push(new TableRow({
+              height: { value: Math.round(formState.rowHeightMm * 56.6929), rule: HeightRule.EXACT },
+              cantSplit: true,
+              children: formState.columns.map((_, i) => new TableCell({
+                width: { size: colDxaList[i], type: WidthType.DXA },
+                children: [new Paragraph({ text: "" })]
+              }))
+            }));
+          }
+
+          // Row Footer: 核章欄
+          rows.push(new TableRow({
+            height: { value: 725, rule: HeightRule.EXACT },
+            cantSplit: true,
+            children: [
+              new TableCell({
+                columnSpan: formState.columns.length,
+                width: { size: 10318, type: WidthType.DXA },
+                children: [
+                  new Paragraph({
+                    indent: { left: 160 },
+                    children: [new TextRun({ text: formState.footerText, font: "標楷體", size: 28 })]
+                  })
+                ]
+              })
+            ]
+          }));
+
+          return new Table({
+            width: { size: 10318, type: WidthType.DXA },
+            borders: tableBorders,
+            rows: rows
+          });
+        }
+
+        const docChildren = [buildDocxTable()];
+        if (formState.isDuplex) {
+          docChildren.push(new Paragraph({ children: [new docx.PageBreak()] }));
+          docChildren.push(buildDocxTable());
+        }
+
+        const doc = new Document({
+          sections: [{
+            properties: {
+              page: {
+                size: { width: 11906, height: 16838 },
+                margin: { top: 1020, bottom: 1020, left: 794, right: 794 }
+              }
+            },
+            children: docChildren
+          }]
+        });
+
+        const blob = await Packer.toBlob(doc);
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${formState.title.replace(/[^\w\u4e00-\u9fa5]/g, "_")}_復刻乾淨版.docx`;
+        link.click();
+      } catch (err) {
+        alert("產生 Word 時發生錯誤：" + err.message);
+      } finally {
+        btn.innerHTML = origHtml;
+        btn.disabled = false;
+        lucide.createIcons();
+      }
+    });
+
+    // JSON 規格匯出與載入
+    document.getElementById("btnExportJson").addEventListener("click", () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(formState, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `${formState.title || "FormSpec"}_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    });
+
+    document.getElementById("btnImportJsonTrigger").addEventListener("click", () => {
+      document.getElementById("jsonFileInput").click();
+    });
+    document.getElementById("jsonFileInput").addEventListener("change", e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = event => {
+        try {
+          const imported = JSON.parse(event.target.result);
+          formState = { ...formState, ...imported };
+          
+          document.getElementById("inputTitle").value = formState.title;
+          document.getElementById("infoLabel1").value = formState.info1Label;
+          document.getElementById("infoVal1").value = formState.info1Val;
+          document.getElementById("infoLabel2").value = formState.info2Label;
+          document.getElementById("infoVal2").value = formState.info2Val;
+          document.getElementById("reasonLabel").value = formState.reasonLabel;
+          document.getElementById("reasonVal").value = formState.reasonVal;
+          document.getElementById("inputRowCount").value = formState.rowCount;
+          document.getElementById("rowCountVal").textContent = `${formState.rowCount} 列`;
+          document.getElementById("inputRowHeight").value = formState.rowHeightMm;
+          document.getElementById("rowHeightVal").textContent = `${formState.rowHeightMm.toFixed(1)} mm`;
+          document.getElementById("inputFooterText").value = formState.footerText;
+          document.getElementById("selectDuplex").value = formState.isDuplex ? "duplex" : "single";
+
+          renderColumnControls();
+          updatePreview();
+          alert("規格載入成功！");
+        } catch (err) {
+          alert("JSON 解析失敗，請確認檔案格式是否正確。");
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // ==========================================
+    // 📸 照片疊圖與去手寫痕跡 (Handwriting Cleaner) 核心實作
+    // ==========================================
+    const toggleOverlay = document.getElementById("toggleOverlay");
+    const overlaySliders = document.getElementById("overlaySliders");
+    const dropZone = document.getElementById("dropZone");
+    const photoUpload = document.getElementById("photoUpload");
+    const overlayContainer1 = document.getElementById("overlayContainer1");
+    const overlayContainer2 = document.getElementById("overlayContainer2");
+    const canvas1 = document.getElementById("overlayCanvas1");
+    const canvas2 = document.getElementById("overlayCanvas2");
+    const ctx1 = canvas1.getContext("2d");
+    const ctx2 = canvas2.getContext("2d");
+
+    dropZone.addEventListener("click", () => photoUpload.click());
+    dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("border-emerald-500"); });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("border-emerald-500"));
+    dropZone.addEventListener("drop", e => {
+      e.preventDefault();
+      dropZone.classList.remove("border-emerald-500");
+      if (e.dataTransfer.files.length) handleImageFile(e.dataTransfer.files[0]);
+    });
+    photoUpload.addEventListener("change", e => {
+      if (e.target.files.length) handleImageFile(e.target.files[0]);
+    });
+
+    function handleImageFile(file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          originalImage = img;
+          currentProcessedImage = img;
+          setupOverlayCanvas(img);
+          toggleOverlay.checked = true;
+          overlaySliders.classList.remove("hidden");
+          overlayContainer1.classList.remove("hidden");
+          overlayContainer2.classList.remove("hidden");
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function setupOverlayCanvas(img) {
+      canvas1.width = img.naturalWidth || img.width;
+      canvas1.height = img.naturalHeight || img.height;
+      canvas2.width = canvas1.width;
+      canvas2.height = canvas1.height;
+      
+      ctx1.drawImage(img, 0, 0);
+      ctx2.drawImage(img, 0, 0);
+    }
+
+    toggleOverlay.addEventListener("change", e => {
+      if (e.target.checked && currentProcessedImage) {
+        overlaySliders.classList.remove("hidden");
+        overlayContainer1.classList.remove("hidden");
+        overlayContainer2.classList.remove("hidden");
+      } else {
+        overlaySliders.classList.add("hidden");
+        overlayContainer1.classList.add("hidden");
+        overlayContainer2.classList.add("hidden");
+      }
+    });
+
+    document.getElementById("overlayOpacity").addEventListener("input", e => {
+      const val = e.target.value;
+      document.getElementById("opacityVal").textContent = `${val}%`;
+      canvas1.style.opacity = val / 100;
+      canvas2.style.opacity = val / 100;
+    });
+
+    function updateOverlayTransform() {
+      const x = document.getElementById("overlayX").value;
+      const y = document.getElementById("overlayY").value;
+      const rot = document.getElementById("overlayRotate").value;
+      const t = `translate(${x}px, ${y}px) rotate(${rot}deg)`;
+      canvas1.style.transform = t;
+      canvas2.style.transform = t;
+    }
+    document.getElementById("overlayX").addEventListener("input", updateOverlayTransform);
+    document.getElementById("overlayY").addEventListener("input", updateOverlayTransform);
+    document.getElementById("overlayRotate").addEventListener("input", updateOverlayTransform);
+
+    // 🎯 核心色彩空間濾除：藍筆、紅筆、鉛筆痕跡
+    document.getElementById("btnApplyCleanFilters").addEventListener("click", () => {
+      if (!originalImage) {
+        alert("請先上傳表單照片！");
+        return;
+      }
+
+      const removeBlue = document.getElementById("chkFilterBlue").checked;
+      const removeRed = document.getElementById("chkFilterRed").checked;
+      const suppressPencil = document.getElementById("chkFilterPencil").checked;
+
+      const w = canvas1.width;
+      const h = canvas1.height;
+      ctx1.drawImage(originalImage, 0, 0);
+      const imgData = ctx1.getImageData(0, 0, w, h);
+      const data = imgData.data;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        // 1. 藍色原子筆濾除
+        if (removeBlue) {
+          if (b > r * 1.15 && b > g * 1.05 && b > 45) {
+            data[i] = 255;
+            data[i + 1] = 255;
+            data[i + 2] = 255;
+            continue;
+          }
+        }
+
+        // 2. 紅色筆跡與紅色印章濾除
+        if (removeRed) {
+          if (r > g * 1.25 && r > b * 1.25 && r > 50) {
+            data[i] = 255;
+            data[i + 1] = 255;
+            data[i + 2] = 255;
+            continue;
+          }
+        }
+
+        // 3. 鉛筆灰階筆跡與擦痕消除
+        if (suppressPencil) {
+          if (r > 130 && r < 235 && Math.abs(r - g) < 18 && Math.abs(g - b) < 18) {
+            data[i] = 255;
+            data[i + 1] = 255;
+            data[i + 2] = 255;
+            continue;
+          }
+        }
+      }
+
+      ctx1.putImageData(imgData, 0, 0);
+      ctx2.putImageData(imgData, 0, 0);
+      alert("✨ 自動去手寫濾除完成！已抹除藍色、紅色原子筆與淺灰雜痕！");
+    });
+
+    // 🖱️ 手動橡皮擦塗抹模式
+    const btnToggleEraser = document.getElementById("btnToggleEraser");
+    const eraserOptions = document.getElementById("eraserOptions");
+    const eraserStatusBadge = document.getElementById("eraserStatusBadge");
+
+    btnToggleEraser.addEventListener("click", () => {
+      isEraserMode = !isEraserMode;
+      if (isEraserMode) {
+        btnToggleEraser.textContent = "關閉擦除筆";
+        btnToggleEraser.classList.add("bg-purple-600", "text-white");
+        eraserOptions.classList.remove("hidden");
+        eraserStatusBadge.classList.remove("hidden");
+        canvas1.classList.add("eraser-active");
+      } else {
+        btnToggleEraser.textContent = "啟用擦除筆";
+        btnToggleEraser.classList.remove("bg-purple-600", "text-white");
+        eraserOptions.classList.add("hidden");
+        eraserStatusBadge.classList.add("hidden");
+        canvas1.classList.remove("eraser-active");
+      }
+    });
+
+    document.getElementById("brushSize").addEventListener("input", e => {
+      brushRadius = parseInt(e.target.value, 10);
+      document.getElementById("brushSizeVal").textContent = `${brushRadius}px`;
+    });
+
+    function eraseAt(canvas, ctx, clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (clientX - rect.left) * scaleX;
+      const y = (clientY - rect.top) * scaleY;
+
+      ctx.save();
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(x, y, brushRadius * scaleX, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    canvas1.addEventListener("mousedown", e => {
+      if (!isEraserMode) return;
+      isDrawing = true;
+      eraseAt(canvas1, ctx1, e.clientX, e.clientY);
+      eraseAt(canvas2, ctx2, e.clientX, e.clientY);
+    });
+
+    window.addEventListener("mousemove", e => {
+      if (!isEraserMode || !isDrawing) return;
+      eraseAt(canvas1, ctx1, e.clientX, e.clientY);
+      eraseAt(canvas2, ctx2, e.clientX, e.clientY);
+    });
+
+    window.addEventListener("mouseup", () => { isDrawing = false; });
+
+    // 還原原圖
+    document.getElementById("btnResetPhoto").addEventListener("click", () => {
+      if (!originalImage) return;
+      setupOverlayCanvas(originalImage);
+      alert("已還原上傳照片原貌！");
+    });
+
+    // 初始初始化
+    renderColumnControls();
+    updatePreview();
+  </script>
+</body>
+</html>
